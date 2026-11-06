@@ -1,0 +1,31 @@
+name: PR
+on: pull_request
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest boto3
+      - run: pytest app/tests
+
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive infra
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.PLAN_ROLE_ARN }}
+          aws-region: eu-west-1
+
+      - run: |
+          terraform -chdir=infra/envs/dev init
+          terraform -chdir=infra/envs/dev validate
+          terraform -chdir=infra/envs/dev plan -lock=false
