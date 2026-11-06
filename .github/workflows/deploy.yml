@@ -24,3 +24,9 @@ jobs:
       - run: |
           terraform -chdir=infra/envs/dev init
           terraform -chdir=infra/envs/dev apply -auto-approve
+      - name: Publicar web
+        run: |
+          T="terraform -chdir=infra/envs/dev output -raw"
+          echo "window.API_URL='$($T api_url)';" > web/config.js
+          aws s3 sync web "s3://$($T web_bucket)" --delete
+          aws cloudfront create-invalidation --distribution-id "$($T distribution_id)" --paths "/*"

@@ -1,10 +1,18 @@
 variable "name" { type = string }
 variable "lambda_invoke_arn" { type = string }
 variable "lambda_name" { type = string }
+variable "allowed_origins" { type = list(string) }
+
 
 resource "aws_apigatewayv2_api" "this" {
   name          = "${var.name}-api"
   protocol_type = "HTTP"
+
+  cors_configuration {
+    allow_origins = var.allowed_origins
+    allow_methods = ["POST", "OPTIONS"]
+    allow_headers = ["content-type"]
+  }
 }
 
 resource "aws_apigatewayv2_integration" "lambda" {
